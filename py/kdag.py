@@ -5,7 +5,8 @@ import re
 
 	
 def new (graphfile=None):	
-    """ return a recursively nestable graph interface"""
+    """ return a recursively nestable graph interface """
+    
     DG  = data_graph()
     if graphfile == None:
         return dagop(DG)
@@ -17,12 +18,17 @@ def new (graphfile=None):
 
 class dagop(object):
     """ DAG operator- interface to the node and tree classes 
-        self referential, stackable and fun to play with """
+        self-referential, stackable and fun to play with """
         
     def __init__(self, PKGRAPH):
         self.DG = PKGRAPH
 
     def __add__( self, other ):
+        
+         print type( other )
+         
+         raw_input()
+         
          for newnod in other.__getNodes():
              self.DG.add( newnod )
          return self.DG
@@ -130,7 +136,9 @@ class dagop(object):
         return dagop(self.DG)
 
 
-class data_graph( object ):
+
+
+class data_graph(object):
     def __init__( self, graphnamevar='dft_name' ):
         self.parse_object  = basic_parser() #to be continued (XML,etc) 
         self.graphname     = graphnamevar  #name of the graph
@@ -145,12 +153,13 @@ class data_graph( object ):
         self.walkindent    =0
         self.walk_depth_buffer = [] #a list of the depths of all nodes
         self.PARENT_BUFFER_SCAN =[]
+        self.last_created = '' #keep track of last node created 
          
-    def __del__( self ):
+    def __del__(self):
         del self.nodes
         del self.textbuffer
 
-    def reset( self ):
+    def reset(self):
         self.nodes              = []  #the actual list of nodes in the graph
         self.textbuffer         = []  #context of file to write
         
@@ -167,35 +176,8 @@ class data_graph( object ):
     # def listchildren(self):
     # def unparent (self,node):
     # def get_downstream_datafolder(self,node):    
-    
-       
-    def help( self ):
-	    HELPSTR ='############################\n \
-		 \n#HELP FOR class sys_data_tree.data_graph \
-		 \nreset                    \
- 		 \nredrawgraph              \
-		 \ngetnumber                \
-		 \ngetnodenames             \
-		 \ngetnodes                 \
-		 \nsetname                  \
-		 \nget_upstream_datafolder  \
-		 \nlink                     \
-		 \nlistnodes                \
-		 \nload_graph_file          \
-		 \nsave_graph_file          \
-		 \nparent_name              \
-		 \nparent_obj               \
-		 \nadd                      \
-		 \nxists_name               \
-		 \nexists                   \
-		 \nfind_node                \
-		 \nsetupwalk(run first)     \
-		 \nwalk                     \
-		 \ncheck_valid_node         \
-        '
-	    print HELPSTR
-  
-    def refresh( self ):
+
+    def refresh(self):
       #A WAY TO CHECK THE "HEALTH" OF THE GRAPH
       # children may not be set for each node
       # becuase only parents are stored in the file format??
@@ -229,32 +211,40 @@ class data_graph( object ):
          #duplicate names      
 
 
-    def exists ( self, nod ):
+    def exists (self, nod):
         for node in self.nodes:
             if type(nod) is node_base:
                 if node.name==nod.name:
                     return True	    
             if type(nod) is str:
                 if node.name==nod:
-                    return True				
+                    return True	
+            if type(nod) is unicode:
+                if node.name==nod:
+                    return True	
+            			
         return False
 
-    def get ( self, nod ):
+    def get (self, nod):
         """ changed from find_node - 
         works with string or node - if it exists """
         if self.exists(nod):
-			for node in self.nodes:
-				if type(nod) is node_base:
-					if node.name==nod.name:
-						return node	    
-				if type(nod) is str:
-					if node.name==nod:
-						return node	
-			 					
+            for node in self.nodes:
+                if type(nod) is node_base:
+                    if node.name==nod.name:
+                        return node	    
+                if type(nod) is str:
+                    if node.name==nod:
+                        return node	
+                if type(nod) is unicode:
+                    if node.name==nod:
+                        return node	
+                    			 					
         return None
                                            		 
-    def gettype( self, nod ):
-        """ type is not PYTHON type - type is a node attr"""
+    def gettype(self, nod):
+        """ type is not PYTHON type - type is a node attr """
+        
         if type(nod) is node_base:
                 return nod.gettype()
                 
@@ -265,7 +255,8 @@ class data_graph( object ):
         return None
    
     def settype(self, nod, ntype):
-        """ type is not PYTHON type - type is a node attr"""
+        """ type is not PYTHON type - type is a node attr """
+        
         node = self.get( nod )
         if node !=None:
             return node.settype( ntype )
@@ -281,7 +272,7 @@ class data_graph( object ):
 
 
     #PARENT (DIRECT OBJECT METHOD)
-    def parent( self, node1, node2):
+    def parent(self, node1, node2):
         node1 = self.get(node1)
         node2 = self.get(node2)
         if node1 == None or node2 ==None:
@@ -301,7 +292,7 @@ class data_graph( object ):
  
 
         
-    def copy_attrs( self, srcnod, destnod ):
+    def copy_attrs(self, srcnod, destnod):
         node1 = self.get(srcnod)
         node2 = self.get(destnod)
         
@@ -348,7 +339,7 @@ class data_graph( object ):
         return output
 
 
-    def get_nodes_with_attr( self, attr, mode='obj'):
+    def get_nodes_with_attr(self, attr, mode='obj'):
       """ return nodes that contain an attr """
       output =[]
 
@@ -384,13 +375,13 @@ class data_graph( object ):
          if cnode:
            cnode.parent = ( [nodobj.name] )
 
-    def getnodes( self ):
+    def getnodes(self):
       return self.nodes
 
-    def setname( self, name ):
+    def setname(self, name):
       self.name=str(name)
 
-    def set_attr( self, nodename, attr, value):
+    def set_attr(self, nodename, attr, value):
       node = self.get( nodename )
       if node ==None:
         print 'ERROR NO NODE '+nodename
@@ -398,7 +389,7 @@ class data_graph( object ):
 
       node.setattrib(attr,value)
 
-    def add_attr( self, nodename, attr, value):
+    def add_attr(self, nodename, attr, value):
       node = self.get(nodename)
       if node ==None:
         print 'ERROR NO NODE '
@@ -418,7 +409,7 @@ class data_graph( object ):
       return x  
         
              
-    def create( self, name ):
+    def create(self, name):
       if self.exists(name): 
           newnode = node_base(self.fixname(name) )
           self.nodes.append(newnode)
@@ -426,10 +417,11 @@ class data_graph( object ):
       if not self.exists(name):		       
           newnode = node_base(name)
           self.nodes.append(newnode)
+          self.last_created = newnode
           
       return newnode
 
-    def createnode_parent( self, name, parentnode ):
+    def createnode_parent(self, name, parentnode):
       """ create a node and parent it to an existing node """
       pnod        = self.get(parentnode)
       checkexsts = self.get(name)
@@ -446,7 +438,7 @@ class data_graph( object ):
         self.nodes.append(newnode)
         self.parent( name, pnod.name)
         #parent_obj
-      #return node so we can still work with it
+        self.last_created = newnode
       return newnode
 
     def createnode_parent_attr(self, name, parentnode, ATTR, ATTRVAL):
@@ -466,11 +458,11 @@ class data_graph( object ):
         newnode.addattr(ATTR,ATTRVAL)
         self.nodes.append(newnode)
         self.parent(name,PAR.name)
-        #parent_obj
+        self.last_created = newnode
       #return node so we can still work with it
       return newnode
        
-    def insert_node_parent( self, nodeobj, parname ):
+    def insert_node_parent(self, nodeobj, parname):
       PAR = self.get(parname)
       if PAR == None:
           print 'ERROR NO NODE FOUND '
@@ -480,7 +472,7 @@ class data_graph( object ):
         self.parent(nodeobj.name,PAR.name)
       return None
 
-    def delete( self, nodename ):
+    def delete(self, nodename):
         nod_obj = self.get(nodename)
 
         if nod_obj!= None:
@@ -497,7 +489,7 @@ class data_graph( object ):
               temparry.append(tempnode)
         self.nodes= temparry
 
-    def write_file ( self ):
+    def write_file (self):
       fhandler = data_tree_file_io()
       fhandler.writefile_listlines(self.filetextname,self.textbuffer)
       print '#file saved: '+ self.filetextname
@@ -510,7 +502,7 @@ class data_graph( object ):
                 print name
 
 
-    def is_parent_of ( self, parentnode, node ):
+    def is_parent_of (self, parentnode, node):
       self.PARENT_BUFFER_SCAN = [] 
       parentnode = self.get(parentnode)
       node = self.get(node)
@@ -528,7 +520,7 @@ class data_graph( object ):
    
    
    
-    def list_parents_name ( self, nodename ):
+    def list_parents_name (self, nodename):
        NOBJ = self.get(nodename)
        return self.list_parents(NOBJ)
        
@@ -539,7 +531,7 @@ class data_graph( object ):
       return  self.PARENT_BUFFER_SCAN
 
     def scan_parents ( self, node ):
-      """ same as walk_up but with different buffer"""	
+      """ same as walk_up but with different buffer """	
       node = self.get(node)
       parents = node.listparents()
       if node != None:
@@ -551,14 +543,14 @@ class data_graph( object ):
       return self.PARENT_BUFFER_SCAN[1:]
       
       
-    def list_children ( self, node ):
+    def list_children (self, node):
         NOD=self.get(node)
         if NOD==None:
           print 'ERROR datagraph.list_children no node '+ node
         if NOD!=None:
           return NOD.children
    
-    def list_children_obj ( self, node ):
+    def list_children_obj (self, node):
           CHILLINS = self.list_children(node)
           outout = []
           for child in CHILLINS:
@@ -567,7 +559,7 @@ class data_graph( object ):
           return outout
 
     #get actual node object from name
-    def find_rotate( self, nodename, xyzarray ):
+    def find_rotate(self, nodename, xyzarray):
      NODEOBJ = self.get(nodename)
      if NODEOBJ !=None:
         #print 'debug rotating node '+nodename
@@ -575,13 +567,13 @@ class data_graph( object ):
         NODEOBJ.setrotate(xyzarray)
         
     ###
-    def find_move( self, nodename, xyzarray ):
+    def find_move(self, nodename, xyzarray):
      NODEOBJ = self.get(nodename)
      if NODEOBJ !=None:
         print xyzarray
         NODEOBJ.xform_xyz(xyzarray)
       
-    def save_graph_file ( self, filename ):
+    def save_graph_file (self, filename):
       self.textbuffer   =[]
       self.filetextname = str(filename)
       nodeindex = 0
@@ -638,7 +630,7 @@ class data_graph( object ):
       #save the file to disk 
       self.write_file()
 
-    def load_graph_file  ( self, filename ):
+    def load_graph_file  (self, filename):
       self.reset()
       fhandler = data_tree_file_io()
       if os.path.lexists(filename)==0:
@@ -663,6 +655,10 @@ class data_graph( object ):
                  if len(words)>2:
                    #print 'EXTRA INPUT '
                    #print words[3]
+                   
+                   #print 'DEBUG KDAG 659'
+                   #print line
+                   
                    inp_one = words[3]
                    #inp_one = words[5]
                    newnode.setinput (inp_one)
@@ -704,29 +700,28 @@ class data_graph( object ):
                if word == '#SET_TYPE':
                   newnode.settype(    words[4])
 
-    def walk_up_linked ( self, rootnode, mode='obj' ): #walk linked nodes instead of a hierarchy
+    def walk_up_linked (self, rootnode, mode='obj'): #walk linked nodes instead of a hierarchy
         node = self.get(rootnode) #make sure you have the object
         if node == None:
             return 'ERROR '
 
         if mode =='name':
-           print '|'+(self.walkindent*'-')+'+'+ node.name
-           self.walkbuffer.append(node.name)
+           #print '|'+(self.walkindent*'-')+'+'+ node.name
+           self.walkbuffer.append( node.name )
            uplinked = node.listinputs()
            for uplinkednode in uplinked:
               self.walkindent=self.walkindent+1
-              self.walk_up_linked(uplinkednode,mode)
+              self.walk_up_linked(  self.get( uplinkednode ), mode )
               self.walkindent=self.walkindent-1
 
         if mode =='obj':
-           print '|'+(self.walkindent*'-')+'+'+ node.name
-           self.walkbuffer.append(node)
-           childrentemp = node.listoutputs()
-           for childd in childrentemp:
+           #print '|'+(self.walkindent*'-')+'+'+ node.name
+           self.walkbuffer.append( node )
+           uplinked = node.listinputs()
+           for uplinkednode in uplinked:
               self.walkindent=self.walkindent+1
-              self.walklinked(childd,mode)
+              self.walk_up_linked(  self.get( uplinkednode ), mode )
               self.walkindent=self.walkindent-1
-        return self.walkbuffer
   
     def walklinked ( self, rootnode, mode='obj' ): #walk linked nodes instead of a hierarchy
          node = self.get(rootnode) #make sure you have the object
@@ -740,7 +735,7 @@ class data_graph( object ):
            childrentemp = node.listoutputs()
            for childd in childrentemp:
               self.walkindent=self.walkindent+1
-              self.walklinked(childd,mode)
+              self.walklinked( self.get( childd ), mode)
               self.walkindent=self.walkindent-1
 
          if mode =='obj':
@@ -749,103 +744,113 @@ class data_graph( object ):
            childrentemp = node.listoutputs()
            for childd in childrentemp:
               self.walkindent=self.walkindent+1
-              self.walklinked(childd,mode)
+              self.walklinked( self.get( childd ), mode )
               self.walkindent=self.walkindent-1
 
 
          return self.walkbuffer
 
-    def trace_full_name( self, nod_obj ):
-       """ trace the path up and convert to a name
-          only works with nodes that are parented """	
-       self.walkbuffer = []
-       self.walk_up( nod_obj, 'name' )
-       out = ''
-       
-       self.walkbuffer.reverse()
-       
-       cnt =0
-       for x in self.walkbuffer :
-           if cnt==0:
-               out = out + x
-           if cnt>0:
-               out = out + ('|'+ x )
-                      
-           cnt+=1
-       return out
+    def walk_path (self, mode='name'):
+        out = ''
+        if mode=='name':
+            for x in self.walkbuffer:
+                out = out + ('|'+ x )
+            return out
+        
+        if mode=='filesys':
+            for x in self.walkbuffer:
+                out = out + ('/'+ x )
+                print x
+            return out
+                           
 
-    def walk( self, start_node, direction='down', mode='obj' ): 
-        """ interface to walk functions"""
+    def trace_full_name(self, nod_obj, mode):
+       """ trace the path up and convert to a name """
+          
+       self.setupwalk()
+       if mode=='obj':
+          self.walk_up( nod_obj, mode )
+          self.walkbuffer.reverse()
+          return self.walkbuffer
+       if mode=='name':
+          self.walk_up( nod_obj, mode )
+          self.walkbuffer.reverse()   
+          return self.walk_path( mode )
+       if mode=='filesys':
+          self.walk_up( nod_obj, 'name' )
+          self.walkbuffer.reverse()
+          return self.walk_path( mode ) 
+
+    def walk(self, start_node, direction='down', mode='obj'): 
+        """ interface to walk functions """
+        
         self.setupwalk()
         if direction=='up':
-		    self.walk_up( start_node, mode)
+            self.walk_up( start_node, mode)
         if direction=='down':
-		    self.walk_down( start_node, mode)
+            self.walk_down( start_node, mode)
     
         return self.walkbuffer
          
-    def walk_up( self, start_node, mode='obj' ):    
+    def walk_up(self, start_node, mode='obj'):    
         node = self.get( start_node )
         if node ==None:
           return None
 
         if mode =='name':
           #print '|'+(self.walkindent*'-')+'+'+ node.name
-          self.walkbuffer.append(node.name)
+          self.walkbuffer.append( node.name )
           self.walk_depth_buffer.append( self.walkindent )
           parenttemp = node.parent #multiple []
 
           for parent in parenttemp:
               self.walkindent=self.walkindent+1
-              self.walk_up( parent, mode )
+              self.walk_up(  self.get( parent ), mode )
               self.walkindent=self.walkindent-1
 
         if mode =='obj' or mode =='object':
           #print '|'+(self.walkindent*'-')+'+'+ node.name
           self.walkbuffer.append( node )
-          self.walk_depth_buffer.append(self.walkindent)
+          self.walk_depth_buffer.append( self.walkindent )
           parenttemp = node.parent 
       
           for parent in parenttemp:
               self.walkindent=self.walkindent+1
-              self.walk_up( parent, mode )
+              self.walk_up( self.get( parent ) , mode )
               self.walkindent=self.walkindent-1
-          return self.walkbuffer
-      
-        return self.walkbuffer   
+ 
    
-    def walk_down( self, rootnode, mode='obj' ):        #name string , or object mode
+    def walk_down(self, rootnode, mode='obj'):        #name string , or object mode
         node = self.get(rootnode) 
+       
         if node ==None:
           return None
 
         if mode =='name':
           #print '|'+(self.walkindent*'-')+'+'+ node.name
-          self.walkbuffer.append(node.name)
-          self.walk_depth_buffer.append(self.walkindent)
+          self.walkbuffer.append( node.name )
+          self.walk_depth_buffer.append( self.walkindent )
           childrentemp = node.children
 
           for childd in childrentemp:
               self.walkindent=self.walkindent+1
-              self.walk_down(childd,mode)
+              self.walk_down( self.get( childd ), mode )
               self.walkindent=self.walkindent-1
 
         if mode =='obj' or mode =='object':
           #print '|'+(self.walkindent*'-')+'+'+ node.name
           self.walkbuffer.append(node)
-          self.walk_depth_buffer.append(self.walkindent)
+          self.walk_depth_buffer.append( self.walkindent )
           childrentemp = node.children
       
           for childd in childrentemp:
               self.walkindent=self.walkindent+1
-              self.walk_down(childd,mode)
+              self.walk_down( self.get( childd ), mode ) 
               self.walkindent=self.walkindent-1
-          return self.walkbuffer
-      
-        return self.walkbuffer
 
+    """
     def copy_branch( self, rootnode, newnodename, parent_to, spatial_offset, spatial_scale ):        #name string , or object mode
-        """   optional parent (root) to node  """
+        #  optional parent (root) to node  
         mode = 'name'
         node = self.get(rootnode) #make sure you have the object
         if node ==None:
@@ -868,16 +873,13 @@ class data_graph( object ):
           self.walk_depth_buffer.append(self.walkindent)
           childrentemp = node.children
 
-
           for childd in childrentemp:
               self.walkindent=self.walkindent+1
               self.walk(childd,mode)
               self.walkindent=self.walkindent-1
-          return self.walkbuffer
-
-        return self.walkbuffer
-
-    def link( self, node1, node2):
+    """
+    
+    def link(self, node1, node2):
       #first check if both exist, then hook output of node1 to input node2
       if self.exists(node1)==0:
          print 'ERROR NODE '+str(node1)+' DOES NOT EXIST '
@@ -893,7 +895,7 @@ class data_graph( object ):
            node.INPUTS.append(str(node1.name))
            node.hasinputs =1
    
-    def add( self, node ):
+    def add(self, node):
         if self.exists(node):
            return False			
         if not self.exists(node):
@@ -901,7 +903,7 @@ class data_graph( object ):
            return True
 
     #SHOW ENTIRE CONTENTS OF A NODE 
-    def dumpnode( self, nodename ):
+    def dumpnode(self, nodename):
          nodtmp = self.get(nodename)
          if nodename ==None or nodtmp==None:
             return None
@@ -949,7 +951,7 @@ class data_graph( object ):
                     out.append(node.name) 
         return out
         
-    def listnodes( self, mode='obj' ): 
+    def listnodes(self, mode='obj'): 
          out    = []
          for nodetmp in self.nodes:
              if mode == 'name':
@@ -957,9 +959,22 @@ class data_graph( object ):
              if mode == 'object' or mode =='obj':
                 out.append(nodetmp)      
          return out
-                
+          
+    def show_walk(self, mode='full'):
+       if mode=='name':
+          out = ''
+          for each in self.walkbuffer:
+             out= out+' '+each.name
+          print out
+          
+       if mode=='full':
+           print '#############################'
+           print '#WALKBUFFER CONTAINS ' + str (len(self.walkbuffer)) + ' NODES '       
+           print self.walkbuffer
+           
+          
     #SHOW ENTIRE CONTENTS OF GRAPH (ALL NODES ,ATTRS ,ETC IN GRAPH )
-    def show( self, mode='full' ):
+    def show(self, mode='full'):
 		if mode=='name':
 		   out = self.graphname + ': '	
 		   for each in self.nodes:
@@ -1004,7 +1019,7 @@ class data_graph( object ):
 		   print '#############################'
 
 
-    def get_upstream_datafolder( self, node ):
+    def get_upstream_datafolder(self, node):
        upstream = node_base
        if node.hasinputs == 0:
           print 'NO INPUTS'
@@ -1017,7 +1032,7 @@ class data_graph( object ):
        
 ############################################################
 
-class node_base( object ): 
+class node_base(object): 
     #def delete an attribute from a node
    
     def __init__( self, nam='dft_name' ):
@@ -1038,41 +1053,16 @@ class node_base( object ):
         self.hasparents   = 0
         self.haschildren  = 0
         self.ORIGIN       = [0,0,0]
-        self.posx         =  0
-        self.posy         =  0
-        self.posz         =  0
-        self.rotx         =  0
-        self.roty         =  0
-        self.rotz         =  0
-        self.scalex       =  0
-        self.scaley       =  0
-        self.scalez       =  0
-        
-    def help(self):
-        HELPSTR ='############################\n \
-		  \n#HELP FOR class sys_data_tree.node_base \
-		  \nsetname                   \
- 		  \nget_datafolder            \
-		  \nexecute                   \
-		  \naddtable                  \
-		  \nlistalltables             \
-		  \nlistallattrs              \
-		  \ngetallattrs               \
-	      \nhastable                  \
-		  \nhasAttribData  BOOL       \
-		  \nhasattrib (attrname)      \
-		  \naddattr                   \
-  	      \nlistinput                 \
- 		  \nlistinputs                \
-		  \nlistinputsindex           \
-		  \nlistoutput                \
-		  \nshowTranslations          \
-		  \nsetinput                  \
-		  \nxform                     \
-		  \nrotate                    \
-        '
-        print HELPSTR
-        
+        self.posx         = 0
+        self.posy         = 0
+        self.posz         = 0
+        self.rotx         = 0
+        self.roty         = 0
+        self.rotz         = 0
+        self.scalex       = 0
+        self.scaley       = 0
+        self.scalez       = 0
+    
     def setname(self,name):
         self.name=str(name)
 
@@ -1126,16 +1116,15 @@ class node_base( object ):
                 output.append(tempattr)
         return output
 
-    def getattrib (self,attrname):
-      index = 0
+    def getattrib (self, attrname):
+      index=0    
       for attr in self.ATTRS :
          if attr == attrname:
            return self.ATTRVALS[index]
-         index = index+1
-      print 'attr '+attrname+' does not exist'
+         index += 1  
       return None
 
-    def setattrib (self,attrname,value):
+    def setattrib (self, attrname, value):
       if self.hasattrib(attrname)==0:
          print 'error setattr datagraph attr does not exist'
          
@@ -1146,8 +1135,9 @@ class node_base( object ):
              self.ATTRVALS[index]=value
            index = index+1
 
-    def delete_attr_byname(self,attrtoremove):
+    def delete_attr_byname(self, attrtoremove):
       """  debug , delete an attribute from a node  """
+      
       indexx = 0
       namebuffer = []
       valuebuffer = []
@@ -1161,8 +1151,9 @@ class node_base( object ):
       self.ATTRS = namebuffer
       self.ATTRVALS = valuebuffer
 
-    def hasattrib (self,attrname):
+    def hasattrib (self, attrname):
        """ check for attr exists ? """
+       
        has = 0
        for attr in self.ATTRS:
           if attr ==attrname:
@@ -1171,6 +1162,7 @@ class node_base( object ):
 
     def hasAttribData (self):
        """ can be used as boolean or to count number of attrs """
+       
        if self==None:
          return 0
        has = 0
@@ -1180,8 +1172,9 @@ class node_base( object ):
           has=has+1
           return has
 
-    def delete_attrs( self ):
+    def delete_attrs(self):
        """ does this do anything usefull?? """
+       
        self.ATTRS        = []
        self.ATTRVALS     = []
        self.ATTRTYPS     = []
@@ -1194,7 +1187,7 @@ class node_base( object ):
        else:
          return None
 
-    def listinputs( self ):
+    def listinputs(self):
        out = []
        outone = ''
        outtwo = ''
@@ -1205,7 +1198,7 @@ class node_base( object ):
        else:
          return None
 
-    def listinputsindex( self, index ):
+    def listinputsindex(self, index):
        outvar = []
        count = 0
 
@@ -1219,32 +1212,32 @@ class node_base( object ):
              outvar.append( [str(self.INPUTS[x]) ,str(self.INPUTS_TWO[x]) ])
          return outvar
 
-    def listoutput( self ):
+    def listoutput(self):
        return self.OUTPUTS[0]
 
-    def listoutputs( self ):
+    def listoutputs(self):
        out = []
        for nodeoutput in self.OUTPUTS:
          out.append(nodeoutput)
        return out
 
-    def setinput( self, input1 ):
+    def setinput(self, input1):
            self.hasinputs  = 1
            self.INPUTS =[]
            self.INPUTS.append(     str(input1) )
 
-    def setinputs( self, input1, input2 ):
+    def setinputs(self, input1, input2):
            self.hasinputs  = 1
            self.INPUTS =[]
            self.INPUTS.append(     str(input1) )
            self.INPUTS.append(     str(input2) )
 
-    def setoutput( self, node ):
+    def setoutput(self, node):
        self.hasoutputs  = 1
        self.OUTPUTS =[]
        self.OUTPUTS.append( node )
 
-    def show( self ):
+    def show(self):
        print 'NODE NAME IS '+ self.name
        print 'hasxform '+ str (self.hasxform )
        ATTRS = self.listallattrs()
@@ -1255,7 +1248,7 @@ class node_base( object ):
        #self.showTranslations()
        self.showParenting()
        
-    def showTranslations( self ):
+    def showTranslations(self):
         print '\n##############'
         print 'NODE NAME IS '+ self.name
         print 'hasxform '+ str (self.hasxform )
@@ -1285,39 +1278,39 @@ class node_base( object ):
         print self.hasparents
         print self.haschildren
 
-    def showParenting( self ):
+    def showParenting(self):
         print '#hasparents/haschildren'
         print self.hasparents
         print self.haschildren
 
-    def getxform( self ):
+    def getxform(self):
        out = []
-       out.append([self.posx,self.posy ,self.posz ])
+       out.append([self.posx, self.posy ,self.posz ])
        temp = str(out[0])
        temp.replace(' ','')
        return temp
        
-    def getrotate( self ):
+    def getrotate(self):
        out = []
-       out.append([self.rotx,self.roty ,self.rotz ])
+       out.append([self.rotx, self.roty ,self.rotz ])
        return out
 
-    def getorient( self ):
+    def getorient(self):
        out = []
-       out.append([self.orientx,self.orienty ,self.orientz ])
+       out.append([self.orientx, self.orienty ,self.orientz ])
        return out
 
-    def scale_entire_graph( self, amount ):
+    def scale_entire_graph(self, amount):
         allnodes = self.listnodes('object')
         for node in allnodes:
             node.scalexform(amount)	
                    
-    def scalexform( self, amount ):
+    def scalexform(self, amount):
         self.posx =  self.posx * amount
         self.posy =  self.posy * amount
         self.posz =  self.posz * amount
    
-    def setxform( self, fbt ):
+    def setxform(self, fbt):
        out = []
        if fbt==None:
          return
@@ -1327,7 +1320,7 @@ class node_base( object ):
        self.xform(out)
        self.hasxform =1
        
-    def setrotate( self, fbt ):
+    def setrotate(self, fbt):
        if fbt==None:
          return
        out = []
@@ -1336,22 +1329,23 @@ class node_base( object ):
        self.rotate(fbt)
        self.hasrotate =1
 
-    def xform(self,fbt):
+    def xform(self, fbt):
        """  translations are optional, expects an array of arrays - [ [xyz],[xyz] ] """
+       
        self.hasxform = 1
        pos = fbt[0]
        self.posx = pos[0]
        self.posy = pos[1]
        self.posz = pos[2]
 	   
-    def xform_xyz(self,xyz):
+    def xform_xyz(self, xyz):
        self.hasxform = 1
        pos = xyz
        self.posx = xyz[0]
        self.posy = xyz[1]
        self.posz = xyz[2]
 
-    def rotate(self,fbt):
+    def rotate(self, fbt):
        self.hasxform = 1 
        self.rotx = fbt[0]
        self.roty = fbt[1]
@@ -1360,78 +1354,95 @@ class node_base( object ):
 
 ########################################
 
+class data_tree_file_io (object):
 
-class data_tree_file_io ( object ):
-
-    def __init__( self ):
+    def __init__(self):
         self.filecontents_list =[]
         self.filecontents      =''
 
-    def writefile_listlines (self,path,listvar):
+    def writefile_listlines (self, path, listvar):
         file_object = codecs.open ( path, "w", encoding='utf-8')
         #file_object.writelines (listvar)
         for line in listvar:
             #file_object.write(line+'\n')
-            file_object.write('\n'+str(line))
+            
+            #DEBUG 
+            #file_object.write(unicode(line)+'\n')    
+            print line        
+            file_object.write(str(line)+'\n')
         file_object.close()
  
-    def readfilelines ( self, path ):
+    def readfilelines (self, path):
         if os.path.lexists(path) == 0:
             print (path, " DOES NOT EXIST !! " )
         if os.path.lexists(path):
             if len(path) == 0:
                 print ("filename not defined")
             else:
-                f = codecs.open( path,"r",encoding='utf-8')
+                f = codecs.open( path,"r", encoding='utf-8')
                 self.filecontents = f.readlines()
                 for x in self.filecontents :
                     #lines = x.split(" ")
                     nonewline = x.split('\n')
                     self.filecontents_list.append(nonewline[0])
-		
+
 ########################################
 
 class basic_parser( object ):
     
-    def __init__( self ):
+    def __init__(self):
         self.pnodes               = [] 
         self.walkbuffer           = []
         self.tag_data             = []
         self.attr_known_tags      = []
         self.attr_unknown_tags    = [] 
- 
-    def crop_leftmost ( self, line, slpitchar ):
+
+    def all_between(self, line, left, right):
+        regex_obj = re.compile('(\\' +left + '.+?\\'+right+')')    
+        if regex_obj.findall(line):
+            return regex_obj.findall(line)
+            
+    def all_between_curlys(self, line):
+        regex_obj = re.compile("(\{.+?\})")
+        if regex_obj.findall(line):
+            return regex_obj.findall(line)
+             
+    def all_between_parens(self, line):
+        regex_obj = re.compile("(\(.+?\))")
+        if regex_obj.findall(line):
+            return regex_obj.findall(line)
+        
+    def crop_leftmost(self, line, slpitchar):
         regex_obj = re.compile('^[^'+slpitchar+']*')
         if regex_obj.findall(line):
-            #print regex_obj.findall(line)
             return regex_obj.findall(line)
 
-    def crop_rightmost ( self, line, slpitchar ):
+    def crop_rightmost(self, line, slpitchar):
        regex_obj = re.compile('[^'+slpitchar+']*$')
        if regex_obj.findall(line):
-         #print regex_obj.findall(line)
          return regex_obj.findall(line) 
 
-    def invcrop_rightmost ( self, line, slpitchar ):
+    def invcrop_rightmost(self, line, slpitchar):
        regex_obj = re.compile('['+slpitchar+'].+')
        if regex_obj.findall(line):
          return regex_obj.findall(line)
 
     # string $rghtExp = (".+("+$char+")");
-    def invcrop_leftmost ( self, line, slpitchar ):
+    def invcrop_leftmost(self, line, slpitchar):
        regex_obj = re.compile('.+['+slpitchar+']')
        if regex_obj.findall(line):
          return regex_obj.findall(line)
 
-    def stringify( self, listobj ):
+    def stringify(self, listobj):
       stringdata = ''
       for item in listobj:
          if item !='' and item !=' ':
            stringdata=(stringdata+' '+item)
       return stringdata
 
-    def getnext( self, splitup, trigger ):
+    def getnext(self, splitup, trigger):
        """ splits up a line by whitespace and retrieves next element """
+       
        #splitup = line.split(' ') #or if you fancy a string , riddle me this
        count =0 
        out = ''
@@ -1447,7 +1458,8 @@ class basic_parser( object ):
        #return out.lstrip(' ')
        return None
  
-    def testparse ( self, filename ):
+    def testparse (self, filename):
+        
       #self.reset()
       fhandler = data_tree_file_io()
       if os.path.lexists(filename)==0:
@@ -1480,7 +1492,6 @@ class basic_parser( object ):
                    if tag=='#SET_TYPE':
                      nextword = self.getnext(words,'#SET_TYPE')
                      newnode.settype(    nextword)
-
 
                    ################################ 
                    if tag=='#OUTPUT':
